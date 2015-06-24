@@ -8,41 +8,22 @@ module Callbacks
   end
 
   module ClassMethods
-    def before_save(*args)
-      add_before_save_callback(*args)
-    end
 
-    def after_save(*args)
-      add_after_save_callback(*args)
-    end
-
-    def around_save(*args)
-      add_around_save_callback(*args)
-    end
-
-    def before_save_callbacks
-      @_before_saves
-    end
-
-    def after_save_callbacks
-      @_after_saves
-    end
-
-    def around_save_callbacks
-      @_around_saves
-    end
-    private
-
-    def add_before_save_callback(*args)
-      (@_before_saves ||= []) << args
-    end
-
-    def add_after_save_callback(*args)
-      (@_after_saves ||= []) << args
-    end
-
-    def add_around_save_callback(*args)
-      (@_around_saves ||= []) << args
+    [:before, :after, :around].each do |cb_when|
+      define_method("#{cb_when}_save_callbacks".to_sym) do
+        self.instance_variable_get("@_#{cb_when}_saves")
+      end
+      define_method("#{cb_when}_save".to_sym) do |*args|
+        send("add_#{cb_when}_save_callback".to_sym, *args)
+      end
+      define_method("add_#{cb_when}_save_callback".to_sym) do |*args|
+        if prev = self.instance_variable_get("@_#{cb_when}_saves")
+          self.instance_variable_set("@_#{cb_when}_saves", (prev << args))
+        else
+          self.instance_variable_set("@_#{cb_when}_saves", [args])
+        end
+      end
+      private "add_#{cb_when}_save_callback".to_sym
     end
   end
 end
