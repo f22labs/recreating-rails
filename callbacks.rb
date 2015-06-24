@@ -8,22 +8,23 @@ module Callbacks
   end
 
   module ClassMethods
-
-    [:before, :after, :around].each do |cb_when|
-      define_method("#{cb_when}_save_callbacks".to_sym) do
-        self.instance_variable_get("@_#{cb_when}_saves")
-      end
-      define_method("#{cb_when}_save".to_sym) do |*args|
-        send("add_#{cb_when}_save_callback".to_sym, *args)
-      end
-      define_method("add_#{cb_when}_save_callback".to_sym) do |*args|
-        if prev = self.instance_variable_get("@_#{cb_when}_saves")
-          self.instance_variable_set("@_#{cb_when}_saves", (prev << args))
-        else
-          self.instance_variable_set("@_#{cb_when}_saves", [args])
+    [:save, :update, :create, :commit, :destroy].each do |cb|
+      [:before, :after, :around].each do |cb_when|
+        define_method("#{cb_when}_#{cb}_callbacks".to_sym) do
+          self.instance_variable_get("@_#{cb_when}_#{cb}s")
         end
+        define_method("#{cb_when}_#{cb}".to_sym) do |*args|
+          send("add_#{cb_when}_#{cb}_callback".to_sym, *args)
+        end
+        define_method("add_#{cb_when}_#{cb}_callback".to_sym) do |*args|
+          if prev = self.instance_variable_get("@_#{cb_when}_#{cb}s")
+            self.instance_variable_set("@_#{cb_when}_#{cb}s", (prev << args))
+          else
+            self.instance_variable_set("@_#{cb_when}_#{cb}s", [args])
+          end
+        end
+        private "add_#{cb_when}_#{cb}_callback".to_sym
       end
-      private "add_#{cb_when}_save_callback".to_sym
     end
   end
 end
